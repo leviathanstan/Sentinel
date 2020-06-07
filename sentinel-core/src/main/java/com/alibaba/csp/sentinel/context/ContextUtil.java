@@ -42,7 +42,7 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * @author leyou(lihao)
  * @author Eric Zhao
  */
-public class ContextUtil {
+    public class ContextUtil {
 
     /**
      * Store the context in ThreadLocal for easy access.
@@ -118,15 +118,19 @@ public class ContextUtil {
     }
 
     protected static Context trueEnter(String name, String origin) {
+        //尝试从ThreadLocal中获取
         Context context = contextHolder.get();
         if (context == null) {
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
+                //2000个资源值限制
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                     setNullContext();
                     return NULL_CONTEXT;
                 } else {
+                    // 支持jdk1.7，使用HashMap。为了避免hashmap扩容后，其它线程在map中计算的哈希不一致
+                    // 所以每一次都创建一个新的HashMap来替换
                     LOCK.lock();
                     try {
                         node = contextNameNodeMap.get(name);
@@ -150,6 +154,7 @@ public class ContextUtil {
                     }
                 }
             }
+            //设置来源，同一个请求可能来源不同，所以需要重新封装一个Context保存到ThreadLocal里
             context = new Context(node, name);
             context.setOrigin(origin);
             contextHolder.set(context);

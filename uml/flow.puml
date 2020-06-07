@@ -1,0 +1,62 @@
+@startuml
+title FlowSlot.entry
+
+participant FlowSlot as flowSlot
+participant FlowRuleChecker as checker
+participant FlowRuleManager as manager
+participant FlowRule as rule
+participant DefaultController as controller
+participant DefaultClusterTokenClient as clientToken
+participant DefaultEmbeddedTokenServer as embedToken
+participant DefaultTokenService as defaultToken
+participant ClusterFlowChecker as clusterChecker
+
+flowSlot -> flowSlot : entry(...)
+flowSlot -> flowSlot : checkFlow(...)
+flowSlot -> checker : checkFlow(...)
+checker -> manager : getFlowRuleMap()
+note left : 根据资源名找到对应的rule
+checker <-- manager : rules:Collection<FlowRule>
+checker -> checker : canPassCheck(...)
+activate checker
+alt 集群节点
+checker -> checker : passClusterCheck(...)
+activate checker
+checker -> checker : pickClusterService()
+checker -> rule : getClusterConfig().getFlowId
+checker <-- rule : flowId:long
+note left : flowId
+
+alt server端
+checker -> embedToken : requestToken(...)
+embedToken -> defaultToken : requestToken(...)
+defaultToken -> clusterChecker : acquireClusterToken(...)
+checker <-- clusterChecker : TokenResult
+else client端
+checker -> clientToken : requestToken(...)
+clientToken -> clientToken : sendTokenRequest(...)
+note right : 用netty给server请求
+checker <-- clientToken : TokenResult
+end
+
+checker -> checker : applyTokenResult(...)
+note left : 根据result作出响应
+return true/false
+else 单独限流
+checker -> checker : passLocalCheck(...)
+activate checker
+checker -> checker : selectNodeByRequesterAndStrategy(...)
+note right : 根据limitApp和调用关系限流策略返回对应node
+checker <-- checker : selectedNode:Node
+checker -> rule : getRater()
+rule -> controller : canPass(...)
+note left : 根据对应限流效果进行限流\n直接拒绝实现类为DefaultController
+rule <-- controller : true/false
+checker <-- rule : true/false
+return true/false
+end
+
+return true/false
+flowSlot <-- checker : true/false
+note right : 返回false直接抛异常
+@enduml

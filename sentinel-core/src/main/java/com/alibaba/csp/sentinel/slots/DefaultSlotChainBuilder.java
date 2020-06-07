@@ -38,6 +38,7 @@ public class DefaultSlotChainBuilder implements SlotChainBuilder {
         ProcessorSlotChain chain = new DefaultProcessorSlotChain();
 
         // Note: the instances of ProcessorSlot should be different, since they are not stateless.
+        //以spi的方式加载slot
         List<ProcessorSlot> sortedSlotList = SpiLoader.loadPrototypeInstanceListSorted(ProcessorSlot.class);
         for (ProcessorSlot slot : sortedSlotList) {
             if (!(slot instanceof AbstractLinkedProcessorSlot)) {

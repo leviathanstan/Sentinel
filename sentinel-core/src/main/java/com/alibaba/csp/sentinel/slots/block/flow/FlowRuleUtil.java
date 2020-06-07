@@ -137,6 +137,7 @@ public final class FlowRuleUtil {
     }
 
     private static TrafficShapingController generateRater(/*@Valid*/ FlowRule rule) {
+        //qps流量控制效果控制器选择
         if (rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
             switch (rule.getControlBehavior()) {
                 case RuleConstant.CONTROL_BEHAVIOR_WARM_UP:

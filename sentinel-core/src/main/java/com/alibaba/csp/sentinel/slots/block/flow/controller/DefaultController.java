@@ -47,8 +47,11 @@ public class DefaultController implements TrafficShapingController {
 
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
+        //当前的qps或并发线程数
         int curCount = avgUsedTokens(node);
+        //acquireCount代表这次请求的qps，一般为1
         if (curCount + acquireCount > count) {
+            //优先需求，则睡一会再试
             if (prioritized && grade == RuleConstant.FLOW_GRADE_QPS) {
                 long currentTime;
                 long waitInMs;
@@ -72,6 +75,10 @@ public class DefaultController implements TrafficShapingController {
         if (node == null) {
             return DEFAULT_AVG_USED_TOKENS;
         }
+        /*
+        并发线程数或qps数
+        多线程情况下会有多放的情况。因为从这里获取qps到后面将qps+1之间没有加锁，牺牲了正确性选择了性能
+         */
         return grade == RuleConstant.FLOW_GRADE_THREAD ? node.curThreadNum() : (int)(node.passQps());
     }
 

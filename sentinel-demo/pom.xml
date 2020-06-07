@@ -41,6 +41,8 @@
         <module>sentinel-demo-log-logback</module>
         <module>sentinel-demo-okhttp</module>
         <module>sentinel-demo-jax-rs</module>
+        <module>sentinel-demo-client</module>
+        <module>sentinel-demo-server</module>
     </modules>
 
     <dependencies>

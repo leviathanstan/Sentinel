@@ -46,8 +46,10 @@ public class FlowRuleChecker {
         if (ruleProvider == null || resource == null) {
             return;
         }
+        //当前资源的流控规则
         Collection<FlowRule> rules = ruleProvider.apply(resource.getName());
         if (rules != null) {
+            //对每一条流控规则进行判断
             for (FlowRule rule : rules) {
                 if (!canPassCheck(rule, context, node, count, prioritized)) {
                     throw new FlowException(rule.getLimitApp(), rule);
@@ -67,21 +69,22 @@ public class FlowRuleChecker {
         if (limitApp == null) {
             return true;
         }
-
+        //集群限流
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-
+        //单机限流
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
     private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                           boolean prioritized) {
+        //selectedNode中存有当前的流量信息，一般是StatisticNode
         Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
         if (selectedNode == null) {
             return true;
         }
-
+        //应用对应流量效果进行限流
         return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
     }
 
@@ -98,6 +101,7 @@ public class FlowRuleChecker {
         }
 
         if (strategy == RuleConstant.STRATEGY_CHAIN) {
+            //调用来源不符合，不必限流
             if (!refResource.equals(context.getName())) {
                 return null;
             }
@@ -117,7 +121,7 @@ public class FlowRuleChecker {
         String limitApp = rule.getLimitApp();
         int strategy = rule.getStrategy();
         String origin = context.getOrigin();
-
+        //limitApp符合，需要对来源进行限流
         if (limitApp.equals(origin) && filterOrigin(origin)) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Matches limit origin, return origin statistic node.
@@ -125,6 +129,7 @@ public class FlowRuleChecker {
             }
 
             return selectReferenceNode(rule, context, node);
+        //default，不根据来源
         } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Return the cluster node.
@@ -132,6 +137,7 @@ public class FlowRuleChecker {
             }
 
             return selectReferenceNode(rule, context, node);
+        //other的限流策略，当来源不是其它rule的limit时，进行对应的限流的判断
         } else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
             && FlowRuleManager.isOtherOrigin(origin, rule.getResource())) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
@@ -140,18 +146,21 @@ public class FlowRuleChecker {
 
             return selectReferenceNode(rule, context, node);
         }
-
+        //不进行限流
         return null;
     }
 
     private static boolean passClusterCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                             boolean prioritized) {
         try {
+            //返回client或server的tokenService
             TokenService clusterService = pickClusterService();
             if (clusterService == null) {
                 return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
             }
+            //全局唯一id
             long flowId = rule.getClusterConfig().getFlowId();
+            //为client则发送请求给server判断，为server则自己判断
             TokenResult result = clusterService.requestToken(flowId, acquireCount, prioritized);
             return applyTokenResult(result, rule, context, node, acquireCount, prioritized);
             // If client is absent, then fallback to local mode.

@@ -116,13 +116,14 @@ public class CtSph implements Sph {
 
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
         throws BlockException {
+        //尝试用Thread中获取context
         Context context = ContextUtil.getContext();
         if (context instanceof NullContext) {
             // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
             // so here init the entry only. No rule checking will be done.
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        //初始化context
         if (context == null) {
             // Using default context.
             context = InternalContextUtil.internalEnter(Constants.CONTEXT_DEFAULT_NAME);
@@ -132,7 +133,7 @@ public class CtSph implements Sph {
         if (!Constants.ON) {
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        //获取规则链
         ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
         /*
@@ -145,6 +146,7 @@ public class CtSph implements Sph {
 
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
+            //规则链开始应用
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
             e.exit(count, args);
@@ -192,6 +194,7 @@ public class CtSph implements Sph {
      * @return {@link ProcessorSlotChain} of the resource
      */
     ProcessorSlot<Object> lookProcessChain(ResourceWrapper resourceWrapper) {
+        //静态map，一个资源只需初始化一次
         ProcessorSlotChain chain = chainMap.get(resourceWrapper);
         if (chain == null) {
             synchronized (LOCK) {
@@ -201,7 +204,7 @@ public class CtSph implements Sph {
                     if (chainMap.size() >= Constants.MAX_SLOT_CHAIN_SIZE) {
                         return null;
                     }
-
+                    //从build中创建
                     chain = SlotChainProvider.newSlotChain();
                     Map<ResourceWrapper, ProcessorSlotChain> newMap = new HashMap<ResourceWrapper, ProcessorSlotChain>(
                         chainMap.size() + 1);

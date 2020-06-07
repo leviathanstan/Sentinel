@@ -229,6 +229,7 @@ public final class SpiLoader {
             ServiceLoader<T> serviceLoader = ServiceLoaderUtil.getServiceLoader(clazz);
 
             List<SpiOrderWrapper<T>> orderWrappers = new ArrayList<>();
+            //根据注解上的值进行排序，决定slot的顺序
             for (T spi : serviceLoader) {
                 int order = SpiOrderResolver.resolveOrder(spi);
                 // Since SPI is lazy initialized in ServiceLoader, we use online sort algorithm here.

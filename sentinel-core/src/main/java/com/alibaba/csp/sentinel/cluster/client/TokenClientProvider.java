@@ -30,6 +30,7 @@ public final class TokenClientProvider {
 
     static {
         // Not strictly thread-safe, but it's OK since it will be resolved only once.
+        //单例
         resolveTokenClientInstance();
     }
 

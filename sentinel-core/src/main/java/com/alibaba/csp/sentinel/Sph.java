@@ -18,10 +18,11 @@ package com.alibaba.csp.sentinel;
 import java.lang.reflect.Method;
 
 import com.alibaba.csp.sentinel.slots.block.BlockException;
-import com.alibaba.csp.sentinel.slots.system.SystemRule;
 
 /**
- * The basic interface for recording statistics and performing rule checking for resources.
+ * Interface to get {@link Entry} for resource protection. If any block criteria is met,
+ * a {@link BlockException} or its subclasses will be thrown. Successfully getting a entry
+ * indicates permitting the invocation pass.
  *
  * @author qinan.qn
  * @author jialiang.linjl
@@ -31,166 +32,158 @@ import com.alibaba.csp.sentinel.slots.system.SystemRule;
 public interface Sph extends SphResourceTypeSupport {
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
      * @param name the unique name of the protected resource
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
     Entry entry(String name) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given method.
+     * Create a protected method.
      *
      * @param method the protected method
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
     Entry entry(Method method) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given method.
+     * Create a protected method.
      *
-     * @param method     the protected method
-     * @param batchCount the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param method the protected method
+     * @param count  the count that the resource requires
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(Method method, int batchCount) throws BlockException;
+    Entry entry(Method method, int count) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
-     * @param name       the unique string for the resource
-     * @param batchCount the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param name  the unique string for the resource
+     * @param count the count that the resource requires
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(String name, int batchCount) throws BlockException;
+    Entry entry(String name, int count) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given method.
+     * Create a protected method.
      *
-     * @param method      the protected method
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param method the protected method
+     * @param type   the resource is an inbound or an outbound method. This is used
+     *               to mark whether it can be blocked when the system is unstable
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(Method method, EntryType trafficType) throws BlockException;
+    Entry entry(Method method, EntryType type) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
-     * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param name the unique name for the protected resource
+     * @param type the resource is an inbound or an outbound method. This is used
+     *             to mark whether it can be blocked when the system is unstable
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(String name, EntryType trafficType) throws BlockException;
+    Entry entry(String name, EntryType type) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given method.
+     * Create a protected method.
      *
-     * @param method      the protected method
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param method the protected method
+     * @param type   the resource is an inbound or an outbound method. This is used
+     *               to mark whether it can be blocked when the system is unstable
+     * @param count  the count that the resource requires
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(Method method, EntryType trafficType, int batchCount) throws BlockException;
+    Entry entry(Method method, EntryType type, int count) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
-     * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param name  the unique name for the protected resource
+     * @param type  the resource is an inbound or an outbound method. This is used
+     *              to mark whether it can be blocked when the system is unstable
+     * @param count the count that the resource requires
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(String name, EntryType trafficType, int batchCount) throws BlockException;
+    Entry entry(String name, EntryType type, int count) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
-     * @param method      the protected method
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @param args        parameters of the method for flow control or customized slots
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data).
+     * @param method the protected method
+     * @param type   the resource is an inbound or an outbound method. This is used
+     *               to mark whether it can be blocked when the system is unstable
+     * @param count  the count that the resource requires
+     * @param args   the parameters of the method. It can also be counted by setting
+     *               hot parameter rule
+     * @return entry get.
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(Method method, EntryType trafficType, int batchCount, Object... args) throws BlockException;
+    Entry entry(Method method, EntryType type, int count, Object... args) throws BlockException;
 
     /**
-     * Record statistics and perform rule checking for the given resource.
+     * Create a protected resource.
      *
-     * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @param args        args for parameter flow control or customized slots
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data)
+     * @param name  the unique name for the protected resource
+     * @param type  the resource is an inbound or an outbound method. This is used
+     *              to mark whether it can be blocked when the system is unstable
+     * @param count the count that the resource requires
+     * @param args  the parameters of the method. It can also be counted by setting hot parameter rule
+     * @return entry get
      * @throws BlockException if the block criteria is met
      */
-    Entry entry(String name, EntryType trafficType, int batchCount, Object... args) throws BlockException;
+    Entry entry(String name, EntryType type, int count, Object... args) throws BlockException;
 
     /**
      * Create a protected asynchronous resource.
      *
-     * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @param args        args for parameter flow control or customized slots
+     * @param name  the unique name for the protected resource
+     * @param type  the resource is an inbound or an outbound method. This is used
+     *              to mark whether it can be blocked when the system is unstable
+     * @param count the count that the resource requires
+     * @param args  the parameters of the method. It can also be counted by setting hot parameter rule
      * @return created asynchronous entry
      * @throws BlockException if the block criteria is met
      * @since 0.2.0
      */
-    AsyncEntry asyncEntry(String name, EntryType trafficType, int batchCount, Object... args) throws BlockException;
+    AsyncEntry asyncEntry(String name, EntryType type, int count, Object... args) throws BlockException;
 
     /**
      * Create a protected resource with priority.
      *
      * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
+     * @param type        the resource is an inbound or an outbound method. This is used
+     *                    to mark whether it can be blocked when the system is unstable
+     * @param count       the count that the resource requires
      * @param prioritized whether the entry is prioritized
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data)
+     * @return entry get
      * @throws BlockException if the block criteria is met
      * @since 1.4.0
      */
-    Entry entryWithPriority(String name, EntryType trafficType, int batchCount, boolean prioritized)
-        throws BlockException;
+    Entry entryWithPriority(String name, EntryType type, int count, boolean prioritized) throws BlockException;
 
     /**
      * Create a protected resource with priority.
      *
      * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
+     * @param type        the resource is an inbound or an outbound method. This is used
+     *                    to mark whether it can be blocked when the system is unstable
+     * @param count       the count that the resource requires
      * @param prioritized whether the entry is prioritized
-     * @param args        args for parameter flow control or customized slots
-     * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data)
+     * @param args        the parameters of the method. It can also be counted by setting hot parameter
+     *                    rule
+     * @return entry get
      * @throws BlockException if the block criteria is met
      * @since 1.5.0
      */
-    Entry entryWithPriority(String name, EntryType trafficType, int batchCount, boolean prioritized, Object... args)
+    Entry entryWithPriority(String name, EntryType type, int count, boolean prioritized, Object... args)
         throws BlockException;
 }

@@ -115,9 +115,10 @@ public abstract class LeapArray<T> {
         if (timeMillis < 0) {
             return null;
         }
-
+        //计算当前时间所属的时间窗口数组中的索引
         int idx = calculateTimeIdx(timeMillis);
         // Calculate current bucket start time.
+        //当前时间窗口的开始时间，如果比已存在的时间窗口（idx相同）的开始时间大，说明窗口应该进行滑动
         long windowStart = calculateWindowStart(timeMillis);
 
         /*
@@ -142,11 +143,13 @@ public abstract class LeapArray<T> {
                  * then try to update circular array via a CAS operation. Only one thread can
                  * succeed to update, while other threads yield its time slice.
                  */
+                //当前时间窗口为null，如应用刚启动不久，窗口都是null，需要实例化
                 WindowWrap<T> window = new WindowWrap<T>(windowLengthInMs, windowStart, newEmptyBucket(timeMillis));
                 if (array.compareAndSet(idx, null, window)) {
                     // Successfully updated, return the created bucket.
                     return window;
                 } else {
+                    //让别的线程干活
                     // Contention failed, the thread will yield its time slice to wait for bucket available.
                     Thread.yield();
                 }
@@ -162,6 +165,7 @@ public abstract class LeapArray<T> {
                  * If current {@code windowStart} is equal to the start timestamp of old bucket,
                  * that means the time is within the bucket, so directly return the bucket.
                  */
+                //别的线程已经设置好当前时间窗口了，直接用就行
                 return old;
             } else if (windowStart > old.windowStart()) {
                 /*
@@ -181,6 +185,7 @@ public abstract class LeapArray<T> {
                  * The update lock is conditional (tiny scope) and will take effect only when
                  * bucket is deprecated, so in most cases it won't lead to performance loss.
                  */
+                //窗口滑动，即丢弃旧时间窗口
                 if (updateLock.tryLock()) {
                     try {
                         // Successfully get the update lock, now we reset the bucket.
@@ -194,6 +199,7 @@ public abstract class LeapArray<T> {
                 }
             } else if (windowStart < old.windowStart()) {
                 // Should not go through here, as the provided time is already behind.
+                // 那为什么要写这么一段？
                 return new WindowWrap<T>(windowLengthInMs, windowStart, newEmptyBucket(timeMillis));
             }
         }

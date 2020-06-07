@@ -35,6 +35,7 @@ public class ClusterFlowConfig {
      * Threshold type (average by local value or global value).
      */
     private int thresholdType = ClusterRuleConstant.FLOW_THRESHOLD_AVG_LOCAL;
+    /**集群限流失败，退化到单机限流*/
     private boolean fallbackToLocalWhenFail = true;
 
     /**

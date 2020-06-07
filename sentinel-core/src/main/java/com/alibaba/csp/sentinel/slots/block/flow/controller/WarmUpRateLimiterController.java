@@ -54,10 +54,12 @@ public class WarmUpRateLimiterController extends WarmUpController {
 
             // current interval = restToken*slope+1/count
             double warmingQps = Math.nextUp(1.0 / (aboveToken * slope + 1.0 / count));
+            //warmingQps比count要小，说明当系统处于"冷"状态时，需要以一个更慢的速度进行请求的排队
             costTime = Math.round(1.0 * (acquireCount) / warmingQps * 1000);
         } else {
             costTime = Math.round(1.0 * (acquireCount) / count * 1000);
         }
+        //下面和RateLimiterController相同
         expectedTime = costTime + latestPassedTime.get();
 
         if (expectedTime <= currentTime) {

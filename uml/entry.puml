@@ -1,0 +1,61 @@
+@startuml
+title SphU.entry(...)
+
+participant SphU as sphU
+participant Env as env
+participant CtSph as ctSph
+participant ContextUtil as util
+participant DefaultProcessorSlotChain as chain
+participant CtEntry as entry
+participant AbstractLinkedProcessorSlot as absSlot
+participant SlotChainProvider as provider
+participant DefaultSlotChainBuilder as builder
+participant SpiLoader as loader
+
+sphU -> sphU : entry(...)
+sphU -> env : CtSph.entry
+env -> ctSph : entry(...)
+ctSph -> ctSph : entryWithPriority(...)
+ctSph -> util : getContext()
+ctSph <-- util : context:Context
+opt if context == null
+ctSph -> util : trueEnter
+note right : 一个资源对应一个context \n 所有context保存在HashMap中 \n每个线程在自己的ThreadLocal保存一份引用
+ctSph <-- util : context:Context
+end
+ctSph -> ctSph : lookProcessChain(...)
+activate ctSph
+ctSph -> provider : newSlotChain()
+alt 正常流程
+provider -> builder : build()
+builder -> chain : new
+builder <-- chain : chain:DefaultProcessorSlotChain
+builder -> loader : loadPrototypeInstanceListSorted(...)
+builder <-- loader : sortedSlotList:List<ProcessorSlot>
+builder -> chain : addLast(...)
+note right : 将slot加到链表后面\n一个slot代表一种功能，如限流、熔断
+provider <-- builder : DefaultProcessorSlotChain
+else 走spi加载
+provider -> loader : loadFirstInstanceOrDefault(...)
+end
+ctSph <-- provider : chain:DefaultProcessorSlotChain
+
+return chain:DefaultProcessorSlotChain
+note right : 一个资源对应一个chain
+ctSph -> entry : new
+ctSph <-- entry : e:CtEntry
+ctSph -> chain : entry(...)
+
+chain -> absSlot : transformEntry(...)
+absSlot -> absSlot : fireEntry(...)
+opt if next != null
+absSlot -> absSlot : transformEntry(...)
+note left #red:调用下一条调用链
+end
+chain <-- absSlot : void
+
+ctSph <-- chain : void
+
+env <-- ctSph : e
+sphU <-- env : e
+@enduml

@@ -56,11 +56,12 @@ public class RateLimiterController implements TrafficShapingController {
 
         long currentTime = TimeUtil.currentTimeMillis();
         // Calculate the interval between every two requests.
+        //获取acquireCount个令牌所需时间
         long costTime = Math.round(1.0 * (acquireCount) / count * 1000);
 
         // Expected pass time of this request.
         long expectedTime = costTime + latestPassedTime.get();
-
+        //能够获取令牌的时间小于当前时间
         if (expectedTime <= currentTime) {
             // Contention may exist here, but it's okay.
             latestPassedTime.set(currentTime);
@@ -68,13 +69,16 @@ public class RateLimiterController implements TrafficShapingController {
         } else {
             // Calculate the time to wait.
             long waitTime = costTime + latestPassedTime.get() - TimeUtil.currentTimeMillis();
+            //需要等待的时间大于最大队列时间
             if (waitTime > maxQueueingTimeMs) {
                 return false;
             } else {
                 long oldTime = latestPassedTime.addAndGet(costTime);
                 try {
                     waitTime = oldTime - TimeUtil.currentTimeMillis();
+                    //说明latestPassedTime已经被其它线程修改了，导致waitTime变大了
                     if (waitTime > maxQueueingTimeMs) {
+                        //再将latestPassedTime还原
                         latestPassedTime.addAndGet(-costTime);
                         return false;
                     }

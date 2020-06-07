@@ -115,20 +115,24 @@ public class WarmUpController implements TrafficShapingController {
         long passQps = (long) node.passQps();
 
         long previousQps = (long) node.previousPassQps();
+        //把令牌放入桶
         syncToken(previousQps);
 
         // 开始计算它的斜率
         // 如果进入了警戒线，开始调整他的qps
         long restToken = storedTokens.get();
+        //令牌桶里的令牌数比警戒线多，说明系统还在"冷"的状态
         if (restToken >= warningToken) {
             long aboveToken = restToken - warningToken;
             // 消耗的速度要比warning快，但是要比慢
             // current interval = restToken*slope+1/count
+            //警告Qps，即系统在"冷"状态下理想的qps，比count要小
             double warningQps = Math.nextUp(1.0 / (aboveToken * slope + 1.0 / count));
             if (passQps + acquireCount <= warningQps) {
                 return true;
             }
         } else {
+            //系统已经是热的状态，直接是普通的qps流控
             if (passQps + acquireCount <= count) {
                 return true;
             }
@@ -140,14 +144,16 @@ public class WarmUpController implements TrafficShapingController {
     protected void syncToken(long passQps) {
         long currentTime = TimeUtil.currentTimeMillis();
         currentTime = currentTime - currentTime % 1000;
+        //上一次装桶时间
         long oldLastFillTime = lastFilledTime.get();
+        //控制一下并发度，令牌入桶是缓慢进行的
         if (currentTime <= oldLastFillTime) {
             return;
         }
 
         long oldValue = storedTokens.get();
         long newValue = coolDownTokens(currentTime, passQps);
-
+        //出现并发时，不重试
         if (storedTokens.compareAndSet(oldValue, newValue)) {
             long currentValue = storedTokens.addAndGet(0 - passQps);
             if (currentValue < 0) {
@@ -166,6 +172,7 @@ public class WarmUpController implements TrafficShapingController {
         // 当令牌的消耗程度远远低于警戒线的时候
         if (oldValue < warningToken) {
             newValue = (long)(oldValue + (currentTime - lastFilledTime.get()) * count / 1000);
+        //不太理解，当系统已经处于"冷"状态时，如果qps还处于一个较小的值，此时应该继续添加令牌？
         } else if (oldValue > warningToken) {
             if (passQps < (int)count / coldFactor) {
                 newValue = (long)(oldValue + (currentTime - lastFilledTime.get()) * count / 1000);

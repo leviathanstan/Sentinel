@@ -1,0 +1,44 @@
+@startuml
+title statistic
+
+participant StatisticSlot as slot
+participant ClusterNode as cluster
+participant DefaultNode as defaultNode
+participant StatisticNode as node
+participant ArrayMetric as metric
+participant LeapArray as array
+participant WindowWrap as wrap
+participant MetricBucket as bucket
+participant LongAdder as adder
+
+slot -> defaultNode : increaseThreadNum()
+note left : 并发线程数增加
+defaultNode -> node : increaseThreadNum()
+opt 和StatisticNode同样的流程
+defaultNode -> cluster : increaseThreadNum()
+return
+end
+node -> adder : increment()
+slot <-- adder : void
+
+slot -> defaultNode : addPassRequest(...)
+note left : qps增加
+defaultNode -> node : addPassRequest(...)
+opt 和StatisticNode同样的流程
+defaultNode -> cluster : addPassRequest()
+return
+end
+node -> metric : addPass(count)
+metric -> array : currentWindow()
+note left : 获取当前时间窗口
+metric <-- array : wrap:WindowWrap<MetricBucket>
+metric -> wrap : value()
+note left : 从包装器获取实际窗口
+metric <-- wrap : MetricBucket
+metric -> bucket : addRT(rt)
+note left : qps加1
+bucket -> adder : add(n)
+note left : 对应事件数（成功、失败等）加1
+slot <-- adder : void
+
+@enduml
